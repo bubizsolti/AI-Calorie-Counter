@@ -1,6 +1,7 @@
 package com.example.aikaloriaszamlalo
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -30,7 +31,6 @@ import androidx.navigation.compose.rememberNavController
 import com.example.aikaloriaszamlalo.ui.theme.AiKaloriaSzamlaloTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import android.app.Activity
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -50,10 +50,9 @@ class MainActivity : ComponentActivity() {
                                 navController = navController
                             )
                         }
-                        composable("screen1") {
-                            EmptyScreen(
+                        composable("camera") {
+                            CameraScreen(
                                 modifier = Modifier.padding(innerPadding),
-                                text = "Screen 1",
                                 navController = navController
                             )
                         }
@@ -99,7 +98,7 @@ fun MainContent(modifier: Modifier = Modifier, navController: NavController) {
     ) {
         Greeting(userName = "Android")
         Spacer(modifier = Modifier.height(16.dp))
-        MyButton(buttonText = "Button 1", navController = navController, route = "screen1")
+        MyButton(buttonText = "Camera", navController = navController, route = "camera")
         MyButton(buttonText = "Button 2", navController = navController, route = "screen2")
         Spacer(modifier = Modifier.height(16.dp))
         Button(onClick = { showDialog = true }) {
