@@ -13,7 +13,6 @@ import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -29,17 +28,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import java.util.concurrent.Executors
+import androidx.compose.runtime.key
 
 @Composable
 fun CameraScreen(modifier: Modifier = Modifier, navController: NavController) {
     val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
     var hasCamPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(
@@ -63,55 +62,57 @@ fun CameraScreen(modifier: Modifier = Modifier, navController: NavController) {
 
     Column(modifier = modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         if (hasCamPermission) {
-            AndroidView(
-                factory = { context ->
-                    val previewView = PreviewView(context).apply {
-                        this.scaleType = PreviewView.ScaleType.FILL_CENTER
-                    }
-                    val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
-                    cameraProviderFuture.addListener({
-                        val cameraProvider = cameraProviderFuture.get()
-                        val preview = Preview.Builder().build().also {
-                            it.setSurfaceProvider(previewView.surfaceProvider)
+            key(isPhotoTaken) {  // Add this key
+                AndroidView(
+                    factory = { context ->
+                        val previewView = PreviewView(context).apply {
+                            this.scaleType = PreviewView.ScaleType.FILL_CENTER
                         }
-                        imageCapture = ImageCapture.Builder().build()
+                        Log.d("CameraPreview", "Preview set up. isPhotoTaken: $isPhotoTaken")
+                        val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
+                        cameraProviderFuture.addListener({
+                            val cameraProvider = cameraProviderFuture.get()
+                            val preview = Preview.Builder().build().also {
+                                it.surfaceProvider = previewView.surfaceProvider
+                            }
+                            imageCapture = ImageCapture.Builder().build()
 
-                        val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-                        try {
-                            cameraProvider.unbindAll()
-                            cameraProvider.bindToLifecycle(
-                                lifecycleOwner,
-                                cameraSelector,
-                                preview,
-                                imageCapture
-                            )
-                        } catch (e: Exception) {
-                            Log.e("CameraPreview", "Error starting camera", e)
-                        }
-                    }, ContextCompat.getMainExecutor(context))
-                    previewView
-                },
-                modifier = Modifier.weight(1f)
-            )
+                            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+                            try {
+                                cameraProvider.unbindAll()
+                                cameraProvider.bindToLifecycle(
+                                    lifecycleOwner,
+                                    cameraSelector,
+                                    preview,
+                                    imageCapture
+                                )
+                                Log.d("CameraPreview", "Camera bound to lifecycle. isPhotoTaken: $isPhotoTaken")
+                            } catch (e: Exception) {
+                                Log.e("CameraPreview", "Error starting camera", e)
+                            }
+                        }, ContextCompat.getMainExecutor(context))
+                        previewView
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+            }
             if(!isPhotoTaken){
                 Button(onClick = {
-                    imageCapture?.let { capture ->
-                        capture.takePicture(
-                            cameraExecutor,
-                            object : ImageCapture.OnImageCapturedCallback() {
-                                override fun onCaptureSuccess(image: ImageProxy) {
-                                    super.onCaptureSuccess(image)
-                                    isPhotoTaken = true
+                    imageCapture?.takePicture(
+                        cameraExecutor,
+                        object : ImageCapture.OnImageCapturedCallback() {
+                            override fun onCaptureSuccess(image: ImageProxy) {
+                                super.onCaptureSuccess(image)
+                                isPhotoTaken = true
 
-                                }
-
-                                override fun onError(exception: ImageCaptureException) {
-                                    super.onError(exception)
-                                    Log.e("Camera", "error: ${exception.message}")
-                                }
                             }
-                        )
-                    }
+
+                            override fun onError(exception: ImageCaptureException) {
+                                super.onError(exception)
+                                Log.e("Camera", "error: ${exception.message}")
+                            }
+                        }
+                    )
 
                 }) {
                     Text(text = "Take Picture")
