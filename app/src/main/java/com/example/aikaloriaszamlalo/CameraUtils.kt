@@ -33,7 +33,6 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import java.util.concurrent.Executors
-import androidx.compose.runtime.key
 
 @Composable
 fun CameraScreen(modifier: Modifier = Modifier, navController: NavController) {
@@ -62,40 +61,36 @@ fun CameraScreen(modifier: Modifier = Modifier, navController: NavController) {
 
     Column(modifier = modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         if (hasCamPermission) {
-            key(isPhotoTaken) {  // Add this key
-                AndroidView(
-                    factory = { context ->
-                        val previewView = PreviewView(context).apply {
-                            this.scaleType = PreviewView.ScaleType.FILL_CENTER
+            AndroidView(
+                factory = { context ->
+                    val previewView = PreviewView(context).apply {
+                        this.scaleType = PreviewView.ScaleType.FILL_CENTER
+                    }
+                    val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
+                    cameraProviderFuture.addListener({
+                        val cameraProvider = cameraProviderFuture.get()
+                        val preview = Preview.Builder().build().also {
+                            it.surfaceProvider = previewView.surfaceProvider
                         }
-                        Log.d("CameraPreview", "Preview set up. isPhotoTaken: $isPhotoTaken")
-                        val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
-                        cameraProviderFuture.addListener({
-                            val cameraProvider = cameraProviderFuture.get()
-                            val preview = Preview.Builder().build().also {
-                                it.surfaceProvider = previewView.surfaceProvider
-                            }
-                            imageCapture = ImageCapture.Builder().build()
+                        imageCapture = ImageCapture.Builder().build()
 
-                            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-                            try {
-                                cameraProvider.unbindAll()
-                                cameraProvider.bindToLifecycle(
-                                    lifecycleOwner,
-                                    cameraSelector,
-                                    preview,
-                                    imageCapture
-                                )
-                                Log.d("CameraPreview", "Camera bound to lifecycle. isPhotoTaken: $isPhotoTaken")
-                            } catch (e: Exception) {
-                                Log.e("CameraPreview", "Error starting camera", e)
-                            }
-                        }, ContextCompat.getMainExecutor(context))
-                        previewView
-                    },
-                    modifier = Modifier.weight(1f)
-                )
-            }
+                        val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+                        try {
+                            cameraProvider.unbindAll()
+                            cameraProvider.bindToLifecycle(
+                                lifecycleOwner,
+                                cameraSelector,
+                                preview,
+                                imageCapture
+                            )
+                        } catch (e: Exception) {
+                            Log.e("CameraPreview", "Error starting camera", e)
+                        }
+                    }, ContextCompat.getMainExecutor(context))
+                    previewView
+                },
+                modifier = Modifier.weight(1f)
+            )
             if(!isPhotoTaken){
                 Button(onClick = {
                     imageCapture?.takePicture(

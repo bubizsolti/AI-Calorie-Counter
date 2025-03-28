@@ -18,6 +18,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -30,7 +31,6 @@ import androidx.navigation.compose.rememberNavController
 import com.example.aikaloriaszamlalo.ui.theme.AiKaloriaSzamlaloTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.saveable.rememberSaveable // Import
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -89,7 +89,7 @@ fun EmptyScreen(modifier: Modifier = Modifier, text: String, navController: NavC
 @SuppressLint("ContextCastToActivity")
 @Composable
 fun MainContent(modifier: Modifier = Modifier, navController: NavController) {
-    var showDialog by rememberSaveable { mutableStateOf(false) } // Use rememberSaveable
+    var showDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current as Activity // Get the Activity context
     Column(
         modifier = modifier.fillMaxSize(),
