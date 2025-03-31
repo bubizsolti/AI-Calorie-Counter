@@ -17,8 +17,10 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -29,8 +31,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.aikaloriaszamlalo.ui.theme.AiKaloriaSzamlaloTheme
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,8 +56,8 @@ class MainActivity : ComponentActivity() {
                                 navController = navController
                             )
                         }
-                        composable("screen2") {
-                            CalculatorScreen(navController = navController) // Use CalculatorScreen
+                        composable("calculate_calories") { // Updated route
+                            CalculateWithWeightScreen(navController = navController) // Updated screen
                         }
                     }
                 }
@@ -66,27 +66,11 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Composable
-fun EmptyScreen(modifier: Modifier = Modifier, text: String, navController: NavController) {
-    Column(
-        modifier = modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(text = text)
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = { navController.navigateUp() }) {
-            Text(text = "Back to Main")
-        }
-    }
-
-}
-
 @SuppressLint("ContextCastToActivity")
 @Composable
 fun MainContent(modifier: Modifier = Modifier, navController: NavController) {
     var showDialog by remember { mutableStateOf(false) }
-    val context = LocalContext.current as Activity // Get the Activity context
+    val context = LocalContext.current as Activity
     Column(
         modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
@@ -95,7 +79,7 @@ fun MainContent(modifier: Modifier = Modifier, navController: NavController) {
         Greeting(userName = "Android")
         Spacer(modifier = Modifier.height(16.dp))
         MyButton(buttonText = "Camera", navController = navController, route = "camera")
-        MyButton(buttonText = "Button 2", navController = navController, route = "screen2")
+        MyButton(buttonText = "Calculate with weight", navController = navController, route = "calculate_calories") // Updated button text and route
         Spacer(modifier = Modifier.height(16.dp))
         Button(onClick = { showDialog = true }) {
             Text(text = "Exit")
@@ -107,7 +91,7 @@ fun MainContent(modifier: Modifier = Modifier, navController: NavController) {
                 text = { Text(text = "Are you sure you want to exit?") },
                 confirmButton = {
                     Button(onClick = {
-                        context.finishAndRemoveTask() // Close the app
+                        context.finishAndRemoveTask()
                     }) {
                         Text(text = "Yes")
                     }
@@ -135,8 +119,6 @@ fun Greeting(userName: String, modifier: Modifier = Modifier) {
 @Composable
 fun MyButton(buttonText: String, navController: NavController, route: String) {
     Button(onClick = {
-        // This is where you'll add the button's action
-        println("$buttonText clicked!")
         navController.navigate(route)
     }) {
         Text(text = buttonText)

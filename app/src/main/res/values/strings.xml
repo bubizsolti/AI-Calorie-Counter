@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">aiKaloriaSzamlalo</string>
+    <string name="total_calories_result">Total Calories: %s</string>
 </resources>
