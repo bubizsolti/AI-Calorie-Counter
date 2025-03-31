@@ -57,11 +57,7 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable("screen2") {
-                            EmptyScreen(
-                                modifier = Modifier.padding(innerPadding),
-                                text = "Screen 2",
-                                navController = navController
-                            )
+                            CalculatorScreen(navController = navController) // Use CalculatorScreen
                         }
                     }
                 }
