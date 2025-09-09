@@ -1,4 +1,4 @@
-package com.example.aikaloriaszamlalo
+package com.example.aicaloriecounter
 
 import android.Manifest
 import android.content.pm.PackageManager

@@ -1,4 +1,4 @@
-package com.example.aikaloriaszamlalo
+package com.example.aicaloriecounter
 
 import org.junit.Test
 

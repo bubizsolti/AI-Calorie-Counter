@@ -1,4 +1,5 @@
 <resources>
-    <string name="app_name">aiKaloriaSzamlalo</string>
-    <string name="total_calories_result">Total Calories: %s</string>
+    <string name="app_name">AICalorieCounter</string>
+
+    <string name="total_calories_result">Összes kalória: %s</string>
 </resources>

@@ -1,4 +1,4 @@
-package com.example.aikaloriaszamlalo
+package com.example.aicaloriecounter
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

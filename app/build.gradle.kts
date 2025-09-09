@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.aikaloriaszamlalo"
+    namespace = "com.example.aicaloriecounter"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.aikaloriaszamlalo"
+        applicationId = "com.example.aicaloriecounter"
         minSdk = 30
         targetSdk = 35
         versionCode = 1

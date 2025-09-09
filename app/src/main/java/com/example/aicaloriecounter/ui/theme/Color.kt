@@ -1,4 +1,4 @@
-package com.example.aikaloriaszamlalo.ui.theme
+package com.example.aicaloriecounter.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

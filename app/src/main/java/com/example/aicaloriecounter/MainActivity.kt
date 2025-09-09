@@ -1,4 +1,4 @@
-package com.example.aikaloriaszamlalo
+package com.example.aicaloriecounter
 
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -30,7 +30,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.aikaloriaszamlalo.ui.theme.AiKaloriaSzamlaloTheme
+import com.example.aicaloriecounter.ui.theme.AiKaloriaSzamlaloTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
