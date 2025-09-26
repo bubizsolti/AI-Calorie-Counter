@@ -1,4 +1,4 @@
-package com.example.aicaloriecounter
+package com.example.aicaloriecounter.screens
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -31,13 +31,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
+import com.example.aicaloriecounter.utils.imageProxyToBitmap
 import java.util.concurrent.Executors
 
 @Composable
 fun CameraScreen(modifier: Modifier = Modifier, navController: NavController) {
     val context = LocalContext.current
-    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    val lifecycleOwner = LocalLifecycleOwner.current
     var hasCamPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(
@@ -94,20 +96,32 @@ fun CameraScreen(modifier: Modifier = Modifier, navController: NavController) {
             if(!isPhotoTaken){
                 Button(onClick = {
                     imageCapture?.takePicture(
-                        cameraExecutor,
+                        ContextCompat.getMainExecutor(context),
                         object : ImageCapture.OnImageCapturedCallback() {
                             override fun onCaptureSuccess(image: ImageProxy) {
-                                super.onCaptureSuccess(image)
-                                isPhotoTaken = true
+                                try {
+                                    // Convert the captured image to a Bitmap
+                                    val bitmap = imageProxyToBitmap(image)
 
+                                    // ✅ TODO: Pass this bitmap to your AI detection logic
+                                    // e.g., val result = FoodRecognition.detect(bitmap)
+
+                                    isPhotoTaken = true
+                                } catch (e: Exception) {
+                                    Log.e("Camera", "Error converting image: ${e.message}", e)
+                                } finally {
+                                    // ⚠️ Always close the image to avoid memory leaks
+                                    image.close()
+                                }
                             }
 
+
                             override fun onError(exception: ImageCaptureException) {
-                                super.onError(exception)
-                                Log.e("Camera", "error: ${exception.message}")
+                                Log.e("Camera", "error: ${exception.message}", exception)
                             }
                         }
                     )
+
 
                 }) {
                     Text(text = "Take Picture")

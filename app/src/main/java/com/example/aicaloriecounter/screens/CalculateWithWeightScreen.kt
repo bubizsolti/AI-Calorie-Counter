@@ -1,4 +1,4 @@
-package com.example.aicaloriecounter
+package com.example.aicaloriecounter.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -28,6 +28,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.aicaloriecounter.R
 import kotlinx.coroutines.delay
 import java.util.Locale
 

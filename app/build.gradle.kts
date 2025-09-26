@@ -14,7 +14,6 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
-
     }
 
     buildTypes {
@@ -40,10 +39,8 @@ android {
 }
 
 dependencies {
-
-
-    implementation(libs.tensorflow.lite.support) // Check for latest version
-    implementation(libs.tensorflow.lite.metadata) // Check for latest version
+    implementation(libs.tensorflow.lite.support)
+    implementation(libs.tensorflow.lite.metadata)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
