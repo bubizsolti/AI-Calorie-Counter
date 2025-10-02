@@ -9,14 +9,30 @@ import android.view.Surface
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.camera.core.*
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
+import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -45,13 +61,11 @@ fun CameraScreen(modifier: Modifier = Modifier, navController: NavController) {
     val imageCapture = remember {
         ImageCapture.Builder()
             .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
-            .setTargetRotation(Surface.ROTATION_0) // vagy a kijelző rotációja szerint
+            .setTargetRotation(Surface.ROTATION_0)
             .build()
-
     }
     val cameraExecutor: ExecutorService = remember { Executors.newSingleThreadExecutor() }
 
-    // ✅ Ask for camera permission if not granted
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted -> hasCamPermission = granted }
@@ -70,101 +84,128 @@ fun CameraScreen(modifier: Modifier = Modifier, navController: NavController) {
         }
 
         if (!isPhotoTaken) {
-            // 📸 Show camera preview
-            CameraPreview(lifecycleOwner, imageCapture) { provider ->
-                cameraProvider = provider
-            }
-
-            Spacer(Modifier.height(16.dp))
-            Button(onClick = {
-                val file = File(context.cacheDir, "temp_photo_${System.currentTimeMillis()}.jpg")
-                val outputOptions = ImageCapture.OutputFileOptions.Builder(file).build()
-
-                imageCapture.takePicture(
-                    outputOptions,
-                    cameraExecutor,
-                    object : ImageCapture.OnImageSavedCallback {
-                        override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                            Log.d("Camera", "✅ Saved photo to: ${file.absolutePath}")
-                            photoFile = file
-                            aiResult = fakeAIDetection(BitmapFactory.decodeFile(file.absolutePath))
-
-                            // 👉 csak UI state-et frissíts, ne unbindolj itt!
-                            isPhotoTaken = true
-                        }
-
-
-                        override fun onError(exception: ImageCaptureException) {
-                            Log.e("Camera", "❌ Capture failed: ${exception.message}", exception)
-                        }
-                    }
-                )
-            }) {
-                Text("📸 Take Picture")
-            }
+            CaptureModeUI(
+                lifecycleOwner,
+                imageCapture,
+                { provider -> cameraProvider = provider },
+                cameraExecutor,
+                { file, result ->
+                    photoFile = file
+                    aiResult = result
+                    isPhotoTaken = true
+                }
+            )
         } else {
-            // ✅ Show full-screen photo preview
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-                // 🖼️ Captured photo takes up most of the screen
-                photoFile?.let {
-                    Image(
-                        painter = rememberAsyncImagePainter(it),
-                        contentDescription = "Captured Image",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
-                        contentScale = ContentScale.Crop
-                    )
-                }
-
-                // 📊 Bottom info area
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(text = aiResult)
-
-                    Spacer(Modifier.height(12.dp))
-
-                    // ✅ Buttons side by side
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Button(onClick = { navController.navigateUp() }) {
-                            Text("⬅️ Back")
-                        }
-                        Button(onClick = {
-                            // 🧹 Reset for new capture
-                            photoFile?.delete()
-                            photoFile = null
-                            isPhotoTaken = false
-                            aiResult = ""
-                        }) {
-                            Text("📷 Take Another")
+            PreviewModeUI(
+                navController,
+                photoFile,
+                aiResult,
+                onReset = {
+                    photoFile?.let { file ->
+                        if (!file.delete()) {
+                            Log.w("Camera", "⚠️ Failed to delete temp file: ${file.absolutePath}")
                         }
                     }
+                    photoFile = null
+                    aiResult = ""
+                    isPhotoTaken = false
                 }
-            }
+            )
         }
-
 
         Spacer(Modifier.height(16.dp))
         Button(onClick = { navController.navigateUp() }) { Text("⬅️ Back to Main") }
     }
+
     LaunchedEffect(isPhotoTaken) {
         if (isPhotoTaken) {
-            cameraProvider?.unbindAll()
+            cameraProvider?.let { provider ->
+                ContextCompat.getMainExecutor(context).execute {
+                    provider.unbindAll()
+                }
+            }
         }
     }
-
 }
+
+@Composable
+private fun CaptureModeUI(
+    lifecycleOwner: androidx.lifecycle.LifecycleOwner,
+    imageCapture: ImageCapture,
+    onCameraReady: (ProcessCameraProvider) -> Unit,
+    cameraExecutor: ExecutorService,
+    onPhotoTaken: (File, String) -> Unit
+) {
+    val context = LocalContext.current
+
+    CameraPreview(lifecycleOwner, imageCapture, onCameraReady)
+    Spacer(Modifier.height(16.dp))
+    Button(onClick = {
+        val file = File(context.cacheDir, "temp_photo_${System.currentTimeMillis()}.jpg")
+        val outputOptions = ImageCapture.OutputFileOptions.Builder(file).build()
+
+        imageCapture.takePicture(
+            outputOptions,
+            cameraExecutor,
+            object : ImageCapture.OnImageSavedCallback {
+                override fun onImageSaved(output: ImageCapture.OutputFileResults) {
+                    Log.d("Camera", "✅ Saved photo to: ${file.absolutePath}")
+                    val result = fakeAIDetection(BitmapFactory.decodeFile(file.absolutePath))
+                    onPhotoTaken(file, result)
+                }
+
+                override fun onError(exception: ImageCaptureException) {
+                    Log.e("Camera", "❌ Capture failed: ${exception.message}", exception)
+                }
+            }
+        )
+    }) {
+        Text("📸 Take Picture")
+    }
+}
+
+@Composable
+private fun PreviewModeUI(
+    navController: NavController,
+    photoFile: File?,
+    aiResult: String,
+    onReset: () -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.SpaceBetween
+    ) {
+        photoFile?.let {
+            Image(
+                painter = rememberAsyncImagePainter(it),
+                contentDescription = "Captured Image",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                contentScale = ContentScale.Crop
+            )
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(text = aiResult)
+            Spacer(Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Button(onClick = { navController.navigateUp() }) { Text("⬅️ Back") }
+                Button(onClick = onReset) { Text("📷 Take Another") }
+            }
+        }
+    }
+}
+
 
 // ✅ Check camera permission
 private fun checkCameraPermission(context: android.content.Context) =
